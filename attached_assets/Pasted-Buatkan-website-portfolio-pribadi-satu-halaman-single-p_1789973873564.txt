@@ -1,0 +1,99 @@
+Buatkan website portfolio pribadi satu halaman (single page) menggunakan React + 
+Tailwind CSS. Website ini untuk melamar kerja sebagai FRESH GRADUATE, jadi jangan 
+ada klaim pengalaman kerja bertahun-tahun.
+
+=== DATA SAYA ===
+Nama: [Nama Lengkap]
+Posisi yang dituju: [contoh: Junior UI/UX Designer]
+Lokasi: [Kota, Indonesia]
+Pendidikan: [Jurusan], [Kampus], lulus [tahun], IPK [x.xx]
+Email: [email]
+LinkedIn: [link]  |  GitHub: [link]  |  Instagram: [link]
+
+=== GAYA VISUAL (WAJIB DIIKUTI) ===
+- Palet MONOKROM: hitam (#0A0A0A), putih (#FFFFFF), abu-abu (#F5F5F5, #8A8A8A). 
+  Tanpa warna aksen lain.
+- Font: "Poppins" atau "Plus Jakarta Sans" dari Google Fonts.
+- Heading sangat besar dan tebal (hero 80-120px di desktop), body text kecil 
+  (14-15px) dan abu-abu. Kontras ukuran ini penting.
+- Judul tiap section pakai format kecil huruf kapital dengan simbol ©, 
+  contoh: "ABOUT © ME", "MY © SKILLS", "SELECTED © WORK".
+- Sudut membulat (rounded-2xl) pada semua kartu dan gambar.
+- Banyak ruang kosong / white space. Bersih dan tenang.
+- Animasi fade-in + slide up halus saat elemen masuk layar (pakai Framer Motion).
+- Hover pada kartu: sedikit terangkat + gambar zoom perlahan.
+
+=== STRUKTUR HALAMAN, URUT DARI ATAS ===
+
+1. NAVBAR
+Sticky di atas. Logo/inisial nama di kiri, menu di tengah (Home, Tentang Saya, 
+Keahlian, Proyek, Pengalaman, Kontak), tombol pill hitam "Hubungi Saya" di kanan. 
+Klik menu = smooth scroll. Di mobile jadi hamburger menu.
+
+2. HERO
+Kartu besar background hitam, teks putih, rounded. Nama saya ditulis SANGAT BESAR 
+dalam dua baris. Di bawahnya subtitle abu-abu: "[Posisi] Based in [Kota]". 
+Di sisi kanan ada placeholder foto saya (grayscale). Full width, tinggi ~90vh.
+
+3. TENTANG SAYA
+Kiri: label "ABOUT © ME". Kanan: paragraf tebal ukuran sedang berisi perkenalan 
+saya sebagai fresh graduate — latar belakang pendidikan, ketertarikan saya di 
+bidang [bidang], dan semangat untuk belajar serta berkontribusi di dunia kerja.
+Di bawahnya: foto placeholder di kiri, dan di kanan grid 4 statistik dengan angka 
+besar (JANGAN pakai tahun pengalaman kerja). Pakai ini:
+- [x]+ Proyek Selesai
+- [x.xx] IPK Kelulusan
+- [x]+ Sertifikasi
+- [x]+ Tools Dikuasai
+
+4. KEAHLIAN SAYA (MY © SKILLS)
+Background abu muda. Subjudul singkat 1-2 kalimat. Lalu grid 6 kartu putih, 
+masing-masing dengan ikon garis sederhana (pakai lucide-react), judul skill, 
+dan deskripsi 2-3 kalimat. Kartu pertama aktif/highlight: background hitam teks putih.
+Isi 6 kartu: [Skill 1], [Skill 2], [Skill 3], [Skill 4], [Skill 5], [Skill 6]
+Di bawah grid, tambahkan baris "Tools" berisi pill/badge outline: 
+[Figma, VS Code, Git, dll].
+
+5. PROYEK SAYA (SELECTED © WORK)
+Judul rata kanan dengan deskripsi singkat di bawahnya. Lalu grid 2 kolom berisi 
+4 kartu proyek. Tiap kartu: gambar besar grayscale rounded, dengan overlay teks di 
+pojok kiri bawah berisi nama proyek (huruf kapital tebal) dan kategori di bawahnya 
+(abu-abu kecil). Seluruh kartu bisa diklik.
+Proyek saya:
+1. [Nama Proyek] — [kategori, contoh: Tugas Akhir / Web Design]
+2. [Nama Proyek] — [kategori]
+3. [Nama Proyek] — [kategori]
+4. [Nama Proyek] — [kategori]
+Sediakan tombol "Lihat Semua Proyek" di bawahnya.
+
+6. PENGALAMAN & PENDIDIKAN
+Judul di tengah "MY © JOURNEY" dengan subjudul. Layout dua kolom:
+- Kiri: kartu hitam berisi 3 kata kunci besar tentang diri saya 
+  ([contoh: Learner. Designer. Team player.]) plus paragraf singkat dan tombol 
+  "Download CV".
+- Kanan: daftar timeline vertikal, tiap baris berisi tahun di kiri, posisi di tengah, 
+  nama institusi di kanan. Isi dengan:
+  [tahun] — [Magang / Organisasi / Kepanitiaan] — [Instansi]
+  [tahun] — [Pengalaman lain] — [Instansi]
+  [tahun] — [Sertifikasi / Bootcamp] — [Penyelenggara]
+  [tahun] — [Pendidikan] — [Kampus]
+
+7. APA KATA MEREKA (kecil saja, opsional)
+Ganti testimoni klien dengan 2 testimoni dari dosen pembimbing atau rekan tim 
+proyek. Kartu hitam, teks kutipan, nama dan jabatan di bawahnya. Jika tidak ada 
+data, buat placeholder.
+
+8. PENUTUP + FOOTER
+Background hitam. Teks besar di tengah: "Tertarik Bekerja Sama? Mari Terhubung!" 
+Di bawahnya paragraf singkat dan tombol pill putih berisi email saya.
+Lalu nama lengkap saya ditulis SANGAT BESAR memenuhi lebar layar (seperti 
+"Aleena©Edinson" pada referensi), sedikit terpotong di sisi kiri-kanan.
+Paling bawah: copyright di kiri, daftar link navigasi di kanan.
+
+=== TEKNIS ===
+- Responsif penuh: mobile, tablet, desktop.
+- Semua gambar pakai placeholder grayscale, mudah diganti nanti.
+- Simpan semua teks dan data proyek dalam satu file konstanta terpisah 
+  (data.js) supaya gampang saya edit.
+- Kode rapi, komponen dipisah per section.
+- Semantic HTML dan alt text untuk aksesibilitas.
