@@ -80,7 +80,7 @@ function App() {
                 <Reveal delay={0.2}><div className="mt-12 flex flex-wrap items-center gap-x-10 gap-y-3 text-xs"><span className="font-semibold">{data.person.role}</span><span className="text-[#8a8a8a]">—</span><span className="text-[#8a8a8a]">{data.person.location}</span></div></Reveal>
               </div>
               <Reveal delay={0.25} className="lg:pb-2"><div className="relative">
-                <PlaceholderArt className="aspect-[.8] w-full rounded-2xl bg-[#2a2a2a] grayscale md:aspect-[.9]" label={data.person.portraitAlt} />
+                <img src="/keeuna-profile.jpeg" alt="Foto profil Keeuna Dhastyn Syahdira Putra" className="aspect-[.8] w-full rounded-2xl object-cover object-[center_28%] grayscale md:aspect-[.9]" />
                 <div className="absolute -bottom-5 -left-4 flex h-16 w-16 items-center justify-center rounded-full bg-white text-[#0a0a0a] md:-left-7 md:h-20 md:w-20"><ArrowDown size={21} strokeWidth={1.5} /></div>
                 <span className="absolute right-4 top-4 max-w-24 text-right text-[9px] uppercase leading-4 tracking-[.14em] text-[#8a8a8a]">potret / placeholder</span>
               </div></Reveal>
