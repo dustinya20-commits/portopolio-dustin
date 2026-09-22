@@ -1,0 +1,1 @@
+- [Uploaded portfolio projects](uploaded-projects.md) — direct object uploads plus PostgreSQL metadata require auth and a React Query provider.
