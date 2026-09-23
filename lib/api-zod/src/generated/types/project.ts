@@ -19,5 +19,7 @@ export interface Project {
   assetType: string | null;
   /** @nullable */
   assetName: string | null;
+  /** @nullable */
+  externalUrl: string | null;
   createdAt: Date;
 }

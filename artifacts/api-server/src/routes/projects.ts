@@ -12,6 +12,23 @@ import { ObjectStorageService } from "../lib/objectStorage";
 const router: IRouter = Router();
 const objectStorageService = new ObjectStorageService();
 
+function isSupportedVideoUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    const hostname = url.hostname.toLowerCase().replace(/^www\./, "");
+    return (
+      url.protocol === "https:" &&
+      (hostname === "instagram.com" ||
+        hostname.endsWith(".instagram.com") ||
+        hostname === "youtube.com" ||
+        hostname.endsWith(".youtube.com") ||
+        hostname === "youtu.be")
+    );
+  } catch {
+    return false;
+  }
+}
+
 router.get("/projects", async (_req, res): Promise<void> => {
   const projects = await db
     .select()
@@ -33,7 +50,22 @@ router.post("/projects", async (req: Request, res: Response): Promise<void> => {
     return;
   }
 
-  const { assetPath } = parsed.data;
+  const { assetPath, externalUrl } = parsed.data;
+  if (externalUrl && !isSupportedVideoUrl(externalUrl)) {
+    res.status(400).json({ error: "Only Instagram and YouTube links are supported" });
+    return;
+  }
+
+  if (!assetPath && !externalUrl) {
+    res.status(400).json({ error: "A project file or video link is required" });
+    return;
+  }
+
+  if (assetPath && externalUrl) {
+    res.status(400).json({ error: "Choose either a project file or a video link" });
+    return;
+  }
+
   if (assetPath?.startsWith("/objects/")) {
     await objectStorageService.trySetObjectEntityAclPolicy(assetPath, {
       owner: req.user.id,

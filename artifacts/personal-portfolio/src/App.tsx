@@ -6,6 +6,7 @@ import {
   Check,
   ChevronRight,
   Download,
+  ExternalLink,
   Github,
   ImagePlus,
   Instagram,
@@ -16,6 +17,7 @@ import {
   LogOut,
   Menu,
   MousePointer2,
+  Play,
   Quote,
   Trash2,
   Upload,
@@ -55,6 +57,7 @@ type DisplayProject = PortfolioProject & {
   assetPath?: string | null;
   assetType?: string | null;
   assetName?: string | null;
+  externalUrl?: string | null;
   remoteId?: number;
 };
 
@@ -124,11 +127,39 @@ function toDisplayProject(project: ApiProject): DisplayProject {
     assetPath: project.assetPath,
     assetType: project.assetType,
     assetName: project.assetName,
+    externalUrl: project.externalUrl,
   };
 }
 
 function projectAssetUrl(assetPath?: string | null) {
   return assetPath ? `/api/storage${assetPath}` : null;
+}
+
+function externalVideoInfo(externalUrl?: string | null) {
+  if (!externalUrl) return null;
+
+  try {
+    const url = new URL(externalUrl);
+    if (url.protocol !== "https:") return null;
+    const hostname = url.hostname.toLowerCase().replace(/^www\./, "");
+    if (
+      hostname === "instagram.com" ||
+      hostname.endsWith(".instagram.com")
+    ) {
+      return { label: "Instagram", url: externalUrl };
+    }
+    if (
+      hostname === "youtube.com" ||
+      hostname.endsWith(".youtube.com") ||
+      hostname === "youtu.be"
+    ) {
+      return { label: "YouTube", url: externalUrl };
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
 }
 
 function ProjectVisual({
@@ -139,6 +170,7 @@ function ProjectVisual({
   detail?: boolean;
 }) {
   const assetUrl = projectAssetUrl(project.assetPath);
+  const externalVideo = externalVideoInfo(project.externalUrl);
   const isVideo = project.assetType?.startsWith("video/");
   const isImage = project.assetType?.startsWith("image/");
 
@@ -163,6 +195,25 @@ function ProjectVisual({
         src={assetUrl}
         alt={`Preview proyek ${project.title}`}
       />
+    );
+  }
+
+  if (externalVideo) {
+    return (
+      <div
+        className={`${project.art} relative h-full w-full`}
+        role="img"
+        aria-label={`Video proyek di ${externalVideo.label}: ${project.title}`}
+      >
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[#dedede]">
+          <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[#0a0a0a] text-white">
+            <Play size={22} fill="currentColor" />
+          </span>
+          <span className="rounded-full border border-[#0a0a0a]/20 bg-white/70 px-4 py-2 text-[10px] font-bold uppercase tracking-[.14em]">
+            Video · {externalVideo.label}
+          </span>
+        </div>
+      </div>
     );
   }
 
@@ -203,6 +254,7 @@ function ProjectManager({
   const [description, setDescription] = useState("");
   const [year, setYear] = useState(String(new Date().getFullYear()));
   const [file, setFile] = useState<File | null>(null);
+  const [externalUrl, setExternalUrl] = useState("");
   const [formError, setFormError] = useState("");
 
   const isSaving = requestUpload.isPending || createProject.isPending;
@@ -219,6 +271,22 @@ function ProjectManager({
 
     if (file && file.size > 100 * 1024 * 1024) {
       setFormError("Ukuran file maksimal 100 MB.");
+      return;
+    }
+
+    const normalizedExternalUrl = externalUrl.trim();
+    if (normalizedExternalUrl && !externalVideoInfo(normalizedExternalUrl)) {
+      setFormError("Gunakan link HTTPS dari Instagram atau YouTube.");
+      return;
+    }
+
+    if (file && normalizedExternalUrl) {
+      setFormError("Pilih file proyek atau link video, bukan keduanya.");
+      return;
+    }
+
+    if (!file && !normalizedExternalUrl) {
+      setFormError("Tambahkan file proyek atau link video Instagram/YouTube.");
       return;
     }
 
@@ -249,6 +317,7 @@ function ProjectManager({
           assetPath,
           assetType: file?.type || null,
           assetName: file?.name || null,
+          externalUrl: normalizedExternalUrl || null,
         },
       });
 
@@ -257,6 +326,7 @@ function ProjectManager({
       setDescription("");
       setYear(String(new Date().getFullYear()));
       setFile(null);
+      setExternalUrl("");
       onNotify("Proyek berhasil ditambahkan ke Selected Work.");
     } catch (error) {
       setFormError(error instanceof Error ? error.message : "Proyek gagal disimpan.");
@@ -395,11 +465,11 @@ function ProjectManager({
               </label>
 
               <label className="grid cursor-pointer gap-2 text-xs font-semibold">
-                File proyek
+                 File proyek (opsional)
                 <span className="flex min-h-28 flex-col items-center justify-center rounded-xl border border-dashed border-[#0a0a0a]/25 bg-white px-4 py-5 text-center transition-colors hover:border-[#0a0a0a]">
                   <ImagePlus size={20} strokeWidth={1.5} />
                   <span className="mt-2 text-sm font-semibold">
-                    {file ? file.name : "Pilih gambar, video, atau PDF"}
+                     {file ? file.name : "Pilih gambar, video, atau PDF"}
                   </span>
                   <span className="mt-1 text-[10px] font-normal text-[#8a8a8a]">
                     Maksimal 100 MB
@@ -410,6 +480,20 @@ function ProjectManager({
                     onChange={(event) => setFile(event.target.files?.[0] ?? null)}
                     className="sr-only"
                   />
+                </span>
+              </label>
+
+              <label className="grid gap-2 text-xs font-semibold">
+                Atau link video
+                <input
+                  type="url"
+                  value={externalUrl}
+                  onChange={(event) => setExternalUrl(event.target.value)}
+                  placeholder="https://www.youtube.com/watch?v=…"
+                  className="rounded-xl border border-[#0a0a0a]/15 bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[#0a0a0a]"
+                />
+                <span className="text-[10px] font-normal text-[#8a8a8a]">
+                  Gunakan link HTTPS dari Instagram atau YouTube. Pilih link atau file.
                 </span>
               </label>
 
@@ -1154,6 +1238,20 @@ function App() {
             <p className="mt-5 text-sm leading-7 text-[#8a8a8a]">
               {selectedProject.description}
             </p>
+            {(() => {
+              const externalVideo = externalVideoInfo(selectedProject.externalUrl);
+              return externalVideo ? (
+                <a
+                  href={externalVideo.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={(event) => event.stopPropagation()}
+                  className="mt-7 inline-flex items-center gap-2 rounded-full border border-[#0a0a0a] px-5 py-3 text-xs font-bold"
+                >
+                  Buka video di {externalVideo.label} <ExternalLink size={14} />
+                </a>
+              ) : null;
+            })()}
             <button
               type="button"
               onClick={() => {

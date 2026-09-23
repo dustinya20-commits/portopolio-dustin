@@ -21,4 +21,6 @@ export interface ProjectInput {
   assetType?: string | null;
   /** @nullable */
   assetName?: string | null;
+  /** @nullable */
+  externalUrl?: string | null;
 }

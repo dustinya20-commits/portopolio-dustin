@@ -12,6 +12,7 @@ export const projectsTable = pgTable("portfolio_projects", {
   assetPath: text("asset_path"),
   assetType: varchar("asset_type", { length: 128 }),
   assetName: text("asset_name"),
+  externalUrl: text("external_url"),
   ownerId: varchar("owner_id")
     .notNull()
     .references(() => usersTable.id),

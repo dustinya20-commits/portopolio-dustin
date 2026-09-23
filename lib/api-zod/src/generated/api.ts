@@ -29,6 +29,7 @@ export const ListProjectsResponseItem = zod.object({
   "assetPath": zod.string().nullable(),
   "assetType": zod.string().nullable(),
   "assetName": zod.string().nullable(),
+  "externalUrl": zod.string().url().nullable(),
   "createdAt": zod.coerce.date()
 })
 export const ListProjectsResponse = zod.array(ListProjectsResponseItem)
@@ -49,7 +50,8 @@ export const CreateProjectBody = zod.object({
   "year": zod.string().min(1),
   "assetPath": zod.string().nullish(),
   "assetType": zod.string().nullish(),
-  "assetName": zod.string().nullish()
+  "assetName": zod.string().nullish(),
+  "externalUrl": zod.string().url().nullish()
 })
 
 export const CreateProjectResponse = zod.object({
@@ -61,6 +63,7 @@ export const CreateProjectResponse = zod.object({
   "assetPath": zod.string().nullable(),
   "assetType": zod.string().nullable(),
   "assetName": zod.string().nullable(),
+  "externalUrl": zod.string().url().nullable(),
   "createdAt": zod.coerce.date()
 })
 

@@ -289,7 +289,7 @@ components:
         - status
     Project:
       type: object
-      required: [id, title, skill, description, year, assetPath, assetType, assetName, createdAt]
+      required: [id, title, skill, description, year, assetPath, assetType, assetName, externalUrl, createdAt]
       properties:
         id:
           type: integer
@@ -308,6 +308,9 @@ components:
           type: ["string", "null"]
         assetName:
           type: ["string", "null"]
+        externalUrl:
+          type: ["string", "null"]
+          format: uri
         createdAt:
           type: string
           format: date-time
@@ -333,6 +336,9 @@ components:
           type: ["string", "null"]
         assetName:
           type: ["string", "null"]
+        externalUrl:
+          type: ["string", "null"]
+          format: uri
     ProjectResponse:
       $ref: "#/components/schemas/Project"
     ProjectsResponse:
