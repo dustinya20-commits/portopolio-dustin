@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import {
   ArrowDown,
@@ -8,33 +8,16 @@ import {
   Download,
   ExternalLink,
   Github,
-  ImagePlus,
   Instagram,
   LayoutTemplate,
   Linkedin,
-  LoaderCircle,
-  LogIn,
-  LogOut,
   Menu,
   MousePointer2,
   Play,
   Quote,
-  Trash2,
-  Upload,
   Video,
   X,
 } from "lucide-react";
-import type {
-  Project as ApiProject,
-  ProjectInputSkill,
-} from "@workspace/api-client-react";
-import {
-  useCreateProject,
-  useDeleteProject,
-  useListProjects,
-  useRequestUploadUrl,
-} from "@workspace/api-client-react";
-import { useAuth } from "@workspace/replit-auth-web";
 import {
   portfolioData as data,
   type Project as PortfolioProject,
@@ -58,7 +41,6 @@ type DisplayProject = PortfolioProject & {
   assetType?: string | null;
   assetName?: string | null;
   externalUrl?: string | null;
-  remoteId?: number;
 };
 
 function Reveal({
@@ -114,27 +96,6 @@ function PlaceholderArt({
   );
 }
 
-function toDisplayProject(project: ApiProject): DisplayProject {
-  return {
-    id: `uploaded-${project.id}`,
-    remoteId: project.id,
-    title: project.title,
-    category: skillTitles[project.skill],
-    year: project.year,
-    description: project.description,
-    art: "project-art project-art--uploaded",
-    skills: [project.skill],
-    assetPath: project.assetPath,
-    assetType: project.assetType,
-    assetName: project.assetName,
-    externalUrl: project.externalUrl,
-  };
-}
-
-function projectAssetUrl(assetPath?: string | null) {
-  return assetPath ? `/api/storage${assetPath}` : null;
-}
-
 function externalVideoInfo(externalUrl?: string | null) {
   if (!externalUrl) return null;
 
@@ -169,7 +130,7 @@ function ProjectVisual({
   project: DisplayProject;
   detail?: boolean;
 }) {
-  const assetUrl = projectAssetUrl(project.assetPath);
+  const assetUrl = project.assetPath ? `/api/storage${project.assetPath}` : null;
   const externalVideo = externalVideoInfo(project.externalUrl);
   const isVideo = project.assetType?.startsWith("video/");
   const isImage = project.assetType?.startsWith("image/");
@@ -236,337 +197,6 @@ function ProjectVisual({
   );
 }
 
-function ProjectManager({
-  onClose,
-  onNotify,
-}: {
-  onClose: () => void;
-  onNotify: (message: string) => void;
-}) {
-  const { isAuthenticated, isLoading: authLoading, user, login, logout } =
-    useAuth();
-  const remoteProjectsQuery = useListProjects();
-  const requestUpload = useRequestUploadUrl();
-  const createProject = useCreateProject();
-  const deleteProject = useDeleteProject();
-  const [title, setTitle] = useState("");
-  const [skill, setSkill] = useState<ProjectInputSkill>("ui-design");
-  const [description, setDescription] = useState("");
-  const [year, setYear] = useState(String(new Date().getFullYear()));
-  const [file, setFile] = useState<File | null>(null);
-  const [externalUrl, setExternalUrl] = useState("");
-  const [formError, setFormError] = useState("");
-
-  const isSaving = requestUpload.isPending || createProject.isPending;
-  const uploadedProjects = (remoteProjectsQuery.data ?? []).map(toDisplayProject);
-
-  const submitProject = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setFormError("");
-
-    if (!title.trim() || !description.trim() || !year.trim()) {
-      setFormError("Judul, deskripsi, dan tahun wajib diisi.");
-      return;
-    }
-
-    if (file && file.size > 100 * 1024 * 1024) {
-      setFormError("Ukuran file maksimal 100 MB.");
-      return;
-    }
-
-    const normalizedExternalUrl = externalUrl.trim();
-    if (normalizedExternalUrl && !externalVideoInfo(normalizedExternalUrl)) {
-      setFormError("Gunakan link HTTPS dari Instagram atau YouTube.");
-      return;
-    }
-
-    if (file && normalizedExternalUrl) {
-      setFormError("Pilih file proyek atau link video, bukan keduanya.");
-      return;
-    }
-
-    if (!file && !normalizedExternalUrl) {
-      setFormError("Tambahkan file proyek atau link video Instagram/YouTube.");
-      return;
-    }
-
-    try {
-      let assetPath: string | null = null;
-      if (file) {
-        const contentType = file.type || "application/octet-stream";
-        const upload = await requestUpload.mutateAsync({
-          data: { name: file.name, size: file.size, contentType },
-        });
-        const response = await fetch(upload.uploadURL, {
-          method: "PUT",
-          headers: { "Content-Type": contentType },
-          body: file,
-        });
-        if (!response.ok) {
-          throw new Error("Upload file gagal.");
-        }
-        assetPath = upload.objectPath;
-      }
-
-      await createProject.mutateAsync({
-        data: {
-          title: title.trim(),
-          skill,
-          description: description.trim(),
-          year: year.trim(),
-          assetPath,
-          assetType: file?.type || null,
-          assetName: file?.name || null,
-          externalUrl: normalizedExternalUrl || null,
-        },
-      });
-
-      await remoteProjectsQuery.refetch();
-      setTitle("");
-      setDescription("");
-      setYear(String(new Date().getFullYear()));
-      setFile(null);
-      setExternalUrl("");
-      onNotify("Proyek berhasil ditambahkan ke Selected Work.");
-    } catch (error) {
-      setFormError(error instanceof Error ? error.message : "Proyek gagal disimpan.");
-    }
-  };
-
-  const removeProject = async (project: DisplayProject) => {
-    if (!project.remoteId) return;
-    try {
-      await deleteProject.mutateAsync({ id: project.remoteId });
-      await remoteProjectsQuery.refetch();
-      onNotify("Proyek berhasil dihapus.");
-    } catch (error) {
-      setFormError(error instanceof Error ? error.message : "Proyek gagal dihapus.");
-    }
-  };
-
-  return (
-    <div
-      role="presentation"
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-[#0a0a0a]/75 p-4 md:p-8"
-      onClick={onClose}
-    >
-      <motion.div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="manager-title"
-        initial={{ opacity: 0, y: 18 }}
-        animate={{ opacity: 1, y: 0 }}
-        onClick={(event) => event.stopPropagation()}
-        className="relative max-h-[92vh] w-full max-w-3xl overflow-auto rounded-2xl bg-[#f5f5f5] p-5 md:p-8"
-      >
-        <button
-          type="button"
-          aria-label="Tutup pengelola proyek"
-          onClick={onClose}
-          className="absolute right-5 top-5 rounded-full border border-[#0a0a0a]/15 p-2"
-        >
-          <X size={16} />
-        </button>
-
-        <div className="max-w-xl">
-          <SectionLabel>PRIVATE © WORKSPACE</SectionLabel>
-          <h2
-            id="manager-title"
-            className="display-font mt-5 text-4xl font-bold tracking-[-0.06em]"
-          >
-            Kelola proyek.
-          </h2>
-          <p className="mt-4 text-sm leading-7 text-[#8a8a8a]">
-            Tambahkan karya desain atau video baru. Pilih kemampuan agar proyek
-            otomatis muncul ketika kartu skill diklik.
-          </p>
-        </div>
-
-        {authLoading ? (
-          <div className="mt-10 flex items-center gap-3 text-sm text-[#8a8a8a]">
-            <LoaderCircle className="animate-spin" size={18} /> Memeriksa akses…
-          </div>
-        ) : !isAuthenticated ? (
-          <div className="mt-10 rounded-2xl bg-white p-6">
-            <p className="text-sm font-semibold">Masuk untuk mengelola proyek</p>
-            <p className="mt-2 max-w-md text-sm leading-6 text-[#8a8a8a]">
-              Panel ini hanya bisa digunakan setelah login, sehingga pengunjung
-              tidak dapat menambah atau menghapus karya.
-            </p>
-            <button
-              type="button"
-              onClick={login}
-              className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#0a0a0a] px-5 py-3 text-xs font-bold text-white"
-            >
-              <LogIn size={14} /> Masuk
-            </button>
-          </div>
-        ) : (
-          <>
-            <div className="mt-8 flex items-center justify-between gap-4 border-y border-[#0a0a0a]/10 py-4 text-xs">
-              <span className="truncate text-[#8a8a8a]">
-                {user?.email || "Akun aktif"}
-              </span>
-              <button
-                type="button"
-                onClick={logout}
-                className="inline-flex shrink-0 items-center gap-2 font-semibold"
-              >
-                <LogOut size={14} /> Keluar
-              </button>
-            </div>
-
-            <form onSubmit={submitProject} className="mt-8 grid gap-5">
-              <label className="grid gap-2 text-xs font-semibold">
-                Judul proyek
-                <input
-                  value={title}
-                  onChange={(event) => setTitle(event.target.value)}
-                  placeholder="Contoh: Aplikasi belajar mandiri"
-                  className="rounded-xl border border-[#0a0a0a]/15 bg-white px-4 py-3 text-sm font-normal outline-none transition-colors focus:border-[#0a0a0a]"
-                />
-              </label>
-
-              <div className="grid gap-5 sm:grid-cols-2">
-                <label className="grid gap-2 text-xs font-semibold">
-                  Kemampuan terkait
-                  <select
-                    value={skill}
-                    onChange={(event) =>
-                      setSkill(event.target.value as ProjectInputSkill)
-                    }
-                    className="rounded-xl border border-[#0a0a0a]/15 bg-white px-4 py-3 text-sm font-normal outline-none"
-                  >
-                    <option value="ui-design">UI Design</option>
-                    <option value="prototyping">Prototyping</option>
-                    <option value="my-video-edit">My Video Edit</option>
-                  </select>
-                </label>
-                <label className="grid gap-2 text-xs font-semibold">
-                  Tahun
-                  <input
-                    value={year}
-                    onChange={(event) => setYear(event.target.value)}
-                    placeholder="2025"
-                    className="rounded-xl border border-[#0a0a0a]/15 bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[#0a0a0a]"
-                  />
-                </label>
-              </div>
-
-              <label className="grid gap-2 text-xs font-semibold">
-                Deskripsi singkat
-                <textarea
-                  value={description}
-                  onChange={(event) => setDescription(event.target.value)}
-                  placeholder="Ceritakan fokus dan proses proyek ini."
-                  rows={4}
-                  className="resize-y rounded-xl border border-[#0a0a0a]/15 bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[#0a0a0a]"
-                />
-              </label>
-
-              <label className="grid cursor-pointer gap-2 text-xs font-semibold">
-                 File proyek (opsional)
-                <span className="flex min-h-28 flex-col items-center justify-center rounded-xl border border-dashed border-[#0a0a0a]/25 bg-white px-4 py-5 text-center transition-colors hover:border-[#0a0a0a]">
-                  <ImagePlus size={20} strokeWidth={1.5} />
-                  <span className="mt-2 text-sm font-semibold">
-                     {file ? file.name : "Pilih gambar, video, atau PDF"}
-                  </span>
-                  <span className="mt-1 text-[10px] font-normal text-[#8a8a8a]">
-                    Maksimal 100 MB
-                  </span>
-                  <input
-                    type="file"
-                    accept="image/*,video/*,.pdf,.fig,.sketch,.zip"
-                    onChange={(event) => setFile(event.target.files?.[0] ?? null)}
-                    className="sr-only"
-                  />
-                </span>
-              </label>
-
-              <label className="grid gap-2 text-xs font-semibold">
-                Atau link video
-                <input
-                  type="url"
-                  value={externalUrl}
-                  onChange={(event) => setExternalUrl(event.target.value)}
-                  placeholder="https://www.youtube.com/watch?v=…"
-                  className="rounded-xl border border-[#0a0a0a]/15 bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[#0a0a0a]"
-                />
-                <span className="text-[10px] font-normal text-[#8a8a8a]">
-                  Gunakan link HTTPS dari Instagram atau YouTube. Pilih link atau file.
-                </span>
-              </label>
-
-              {formError && (
-                <p role="alert" className="text-sm font-semibold text-[#8a3d3d]">
-                  {formError}
-                </p>
-              )}
-
-              <button
-                type="submit"
-                disabled={isSaving}
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#0a0a0a] px-5 py-3 text-xs font-bold text-white disabled:cursor-wait disabled:opacity-60"
-              >
-                {isSaving ? (
-                  <>
-                    <LoaderCircle className="animate-spin" size={14} /> Menyimpan…
-                  </>
-                ) : (
-                  <>
-                    <Upload size={14} /> Simpan proyek
-                  </>
-                )}
-              </button>
-            </form>
-
-            <div className="mt-12 border-t border-[#0a0a0a]/10 pt-7">
-              <div className="flex items-center justify-between gap-4">
-                <h3 className="text-xs font-bold uppercase tracking-[.12em]">
-                  Proyek tersimpan
-                </h3>
-                <span className="text-[10px] text-[#8a8a8a]">
-                  {uploadedProjects.length} proyek
-                </span>
-              </div>
-              <div className="mt-4 grid gap-3">
-                {uploadedProjects.length === 0 ? (
-                  <p className="rounded-xl bg-white p-4 text-sm text-[#8a8a8a]">
-                    Belum ada proyek yang diunggah.
-                  </p>
-                ) : (
-                  uploadedProjects.map((project) => (
-                    <div
-                      key={project.id}
-                      className="flex items-center justify-between gap-4 rounded-xl bg-white p-4"
-                    >
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold">{project.title}</p>
-                        <p className="mt-1 text-[10px] uppercase tracking-[.1em] text-[#8a8a8a]">
-                          {project.category} · {project.year}
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        aria-label={`Hapus ${project.title}`}
-                        onClick={() => void removeProject(project)}
-                        disabled={deleteProject.isPending}
-                        className="shrink-0 rounded-full border border-[#0a0a0a]/15 p-2 text-[#8a3d3d] disabled:opacity-50"
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </>
-        )}
-      </motion.div>
-    </div>
-  );
-}
-
 function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showAll, setShowAll] = useState(false);
@@ -574,9 +204,7 @@ function App() {
   const [selectedProject, setSelectedProject] = useState<DisplayProject | null>(
     null,
   );
-  const [managerOpen, setManagerOpen] = useState(false);
   const [toast, setToast] = useState("");
-  const remoteProjectsQuery = useListProjects();
 
   useEffect(() => {
     document.title = `${data.person.name} — ${data.person.role}`;
@@ -603,8 +231,7 @@ function App() {
   }, []);
 
   const navTo = () => setMenuOpen(false);
-  const uploadedProjects = (remoteProjectsQuery.data ?? []).map(toDisplayProject);
-  const allProjects: DisplayProject[] = [...data.projects, ...uploadedProjects];
+  const allProjects: DisplayProject[] = [...data.projects];
   const filteredProjects = selectedSkill
     ? allProjects.filter((project) => project.skills.includes(selectedSkill))
     : allProjects;
@@ -1086,7 +713,7 @@ function App() {
                   <figure className="rounded-2xl bg-white p-7 md:p-9">
                     <Quote size={22} strokeWidth={1.5} />
                     <blockquote className="mt-10 max-w-lg text-xl font-semibold leading-8 tracking-[-0.03em]">
-                      “{item.quote}”
+                      "{item.quote}"
                     </blockquote>
                     <figcaption className="mt-12 border-t border-[#0a0a0a]/10 pt-5">
                       <p className="text-xs font-bold">{item.name}</p>
@@ -1176,13 +803,6 @@ function App() {
                     {item.label}
                   </a>
                 ))}
-                <button
-                  type="button"
-                  onClick={() => setManagerOpen(true)}
-                  className="transition-colors hover:text-white"
-                >
-                  Kelola proyek
-                </button>
               </div>
             </div>
           </div>
@@ -1264,13 +884,6 @@ function App() {
             </button>
           </motion.div>
         </div>
-      )}
-
-      {managerOpen && (
-        <ProjectManager
-          onClose={() => setManagerOpen(false)}
-          onNotify={notify}
-        />
       )}
     </div>
   );
